@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin>
+    <name>imagecrunch</name>
+    <type>edit</type>
+    <author>voussoir</author>
+    <description>Murder your jpegs</description>
+    <engine>python3.4</engine>
+    <version>1.0</version>
+    <autostart>true</autostart>
+    <oslist>osx,win,unx</oslist>
+</plugin>
