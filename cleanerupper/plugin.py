@@ -42,8 +42,14 @@ def remove_unwanted_stylesheets(html):
 
 @html_cleaner
 def merge_neighboring_sametag(html):
+    html = re.sub(r'</i><i>', '', html)
     html = re.sub(r'</i>\s*<i>', ' ', html)
+
+    html = re.sub(r'</b><b>', '', html)
     html = re.sub(r'</b>\s*<b>', ' ', html)
+
+    html = re.sub(r'</small><small>', '', html)
+    html = re.sub(r'</small>\s*<small>', ' ', html)
     return html
 
 @html_cleaner
