@@ -139,6 +139,7 @@ def remove_calibre_classes(soup):
         r'mbppagebreak',
         r'calibre_pb_\d+',
         r'filepos\d*',
+        r'pgepubid\d*',
     ]
     for tag in soup.descendants:
         try:
