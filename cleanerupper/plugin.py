@@ -37,27 +37,33 @@ def remove_class(element, cls):
 
 @html_cleaner
 def remove_unwanted_stylesheets(html):
-    html = re.sub(r'<style type="text/css">\s*@page { margin-bottom: 5.000000pt; margin-top: 5.000000pt; }\s*</style>', '', html)
+    html = re.sub(r'<style type="text/css">\s*@page { margin-bottom: 5\.000000pt; margin-top: 5\.000000pt; }\s*</style>', '', html)
+    html = re.sub(r'style="margin-top: 0px; margin-left: 0px; margin-right: 0px; margin-bottom: 0px; text-align: center;"', '', html)
     return html
 
 @html_cleaner
 def merge_neighboring_sametag(html):
-    html = re.sub(r'</i><i>', '', html)
-    html = re.sub(r'</i>\s*<i>', ' ', html)
+    tags = ['i', 'b', 'em', 'strong', 'u', 'small']
+    for tag in tags:
+        html = re.sub(r'</%s><%s>' % (tag, tag), '', html)
+        html = re.sub(r'</%s>\s*<%s>' % (tag, tag), ' ', html)
+        html = re.sub(r'</%s>\s*<br/?>\s*<%s>' % (tag, tag), '<br/>', html)
 
-    html = re.sub(r'</b><b>', '', html)
-    html = re.sub(r'</b>\s*<b>', ' ', html)
-
-    html = re.sub(r'</small><small>', '', html)
-    html = re.sub(r'</small>\s*<small>', ' ', html)
     return html
 
 @html_cleaner
 def bring_punctuation_into_italics(html):
-    for tag in ['i', 'b']:
+    for tag in ['i', 'b', 'em', 'strong']:
         for punct in ['.', ',', '-', '—']:
             html = re.sub('\\{punct}<{tag}>'.format(**locals()), '<{tag}>{punct}'.format(**locals()), html)
             html = re.sub('</{tag}>\\{punct}'.format(**locals()), '{punct}</{tag}>'.format(**locals()), html)
+    return html
+
+@html_cleaner
+def remove_misc_strings(html):
+    html = html.replace('epub:type="pagebreak"', '')
+    html = re.sub(r'title="[ivx]+"', '', html)
+    html = re.sub(r'title="\d+"', '', html)
     return html
 
 @html_cleaner
@@ -69,6 +75,14 @@ def remove_space_around_br(html):
 def replace_smart_quotes(html):
     html = re.sub(r'”|“', '"', html)
     html = re.sub(r'‘|’|ʹ', "'", html)
+    return html
+
+@html_cleaner
+def remove_empty_attributes(html):
+    html = re.sub(r'alt="\s*"', '', html)
+    html = re.sub(r'class="\s*"', '', html)
+    html = re.sub(r'id="\s*"', '', html)
+    html = re.sub(r'title="\s*"', '', html)
     return html
 
 @html_cleaner
@@ -111,6 +125,16 @@ def inject_footnotes(soup):
         remove_class(footnote, 'gcufootnote_content')
 
 @soup_cleaner
+def center_images(soup):
+    for img in soup.find_all('img'):
+        if img.parent.name == 'body':
+            center = soup.new_tag('center')
+            img.insert_before(center)
+            center.append(img)
+        elif img.parent.name in ['div', 'p'] and not img.parent.attrs:
+            img.parent.name = 'center'
+
+@soup_cleaner
 def convert_textdivs_p(soup):
     divs = soup.find_all('div')
     for div in divs:
@@ -133,23 +157,51 @@ def remove_empty_paragraphs(soup):
             br_parent.decompose()
 
 @soup_cleaner
-def remove_calibre_classes(soup):
+def remove_unwanted_classes_ids(soup):
     PATTERNS = [
-        r'calibre\d*',
-        r'mbppagebreak',
+        r'big\d+',
+        r'blnonindent\d*',
+        r'c\d+',
+        r'calibre_?\d*',
         r'calibre_pb_\d+',
+        r'chapter',
+        r'div\d+',
+        r'dropcaps',
         r'filepos\d*',
+        r'font',
+        r'hanging',
+        r'indent\d*',
+        r'initial\d*',
+        r'initialcaps',
+        r'large',
+        r'mbp_?pagebreak',
+        r'morespaceabove',
+        r'nonindent\d*',
+        r'p_?[ivx]+',
+        r'p_?\d+',
+        r'page_?[ivx]+',
+        r'page_?\d+',
+        r'page_top_padding',
+        r'pagebreak',
         r'pgepubid\d*',
+        r'right',
+        r'section',
+        r'spaceabove',
+        r'squeeze(\d+)?',
+        r'stickupcaps',
+        r'title',
     ]
     for tag in soup.descendants:
-        try:
-            tag['class']
-        except (TypeError, KeyError):
-            pass
-        else:
+        if not isinstance(tag, bs4.element.Tag):
+            continue
+
+        if tag.get('class'):
             if isinstance(tag['class'], str):
                 tag['class'] = tag['class'].split()
+            else:
+                tag['class'] = list(tag['class'])
 
+            # Intentional list() duplicate so we can remove from original.
             for cls in list(tag['class']):
                 if any(re.match(pattern, cls) for pattern in PATTERNS):
                     tag['class'].remove(cls)
@@ -157,14 +209,9 @@ def remove_calibre_classes(soup):
             if len(tag['class']) == 0 or tag['class'][0] == '':
                 del tag['class']
 
-        try:
-            tag['id']
-        except (TypeError, KeyError):
-            pass
-        else:
+        if tag.get('id'):
             if any(re.match(pattern, tag['id']) for pattern in PATTERNS):
                 del tag['id']
-                continue
 
 @soup_cleaner
 def remove_header_italic_bold(soup):
@@ -173,19 +220,32 @@ def remove_header_italic_bold(soup):
         children = list(header.children)
         if len(children) > 1:
             continue
+        if len(children) == 0:
+            header.extract()
+            continue
         child = children[0]
         if isinstance(child, str):
             continue
-        if child.name in ['i', 'b']:
+        if child.name in ['i', 'b', 'em', 'strong']:
             raise_children_and_delete(child)
 
 @soup_cleaner
 def remove_useless_divs(soup):
     divs = soup.find_all('div')
     for div in divs:
-        if not div.attrs:
-            if all(isinstance(child, bs4.element.Tag) or child.isspace() for child in div.contents):
-                raise_children_and_delete(div)
+        if div.attrs:
+            continue
+        if all(isinstance(child, bs4.element.Tag) or child.isspace() for child in div.contents):
+            raise_children_and_delete(div)
+
+@soup_cleaner
+def remove_useless_blockquote(soup):
+    blocks = soup.find_all('blockquote')
+    for block in blocks:
+        if block.attrs:
+            continue
+        if all(child.name == 'blockquote' or (isinstance(child, bs4.element.NavigableString) and child.isspace()) for child in block.contents):
+            raise_children_and_delete(block)
 
 @soup_cleaner
 def remove_useless_spans(soup):
@@ -196,8 +256,28 @@ def remove_useless_spans(soup):
         raise_children_and_delete(span)
 
 @soup_cleaner
+def remove_useless_atags(soup):
+    atags = soup.find_all('a')
+    for atag in atags:
+        if atag.attrs:
+            continue
+        raise_children_and_delete(atag)
+
+@soup_cleaner
+def remove_useless_meta(soup):
+    selectors = [
+        'link[type="application/vnd.adobe-page-template+xml"]',
+        'meta[http-equiv="Content-Type"]',
+        'meta[name="Adept.expected.resource"]',
+        'meta[name="Adept.resource"]',
+    ]
+    for selector in selectors:
+        for item in soup.select(selector):
+            item.extract()
+
+@soup_cleaner
 def remove_nested_italic(soup):
-    elements = [element for tag in ['b', 'i'] for element in soup.find_all(tag)]
+    elements = [element for tag in ['b', 'i', 'em', 'strong'] for element in soup.find_all(tag)]
     for element in elements:
         if element.parent.name == element.name:
             raise_children_and_delete(element)
@@ -223,22 +303,45 @@ def replace_italic_bold_span(soup):
             b.insert(0, span)
 
 @soup_cleaner
-def replace_pblock_blockquote(soup):
-    classes = ['block', 'block1', 'blockquote']
-    ptags = set(ptag for cls in classes for ptag in soup.find_all('p', {'class': cls}))
-    for ptag in ptags:
-        if isinstance(ptag['class'], str):
-            span['class'] = span['class'].split()
-        if len(ptag['class']) == 1:
-            ptag.name = 'blockquote'
-            ptag['class'] = []
+def replace_classes_real_tags(soup):
+    replace = {
+        'div.block': 'blockquote',
+        'div.block1': 'blockquote',
+        'div.block2': 'blockquote',
+        'div.block3': 'blockquote',
+        'div.blockquote': 'blockquote',
+        'div.center': 'center',
+        'div.center1': 'center',
+        'p.block': 'blockquote',
+        'p.block1': 'blockquote',
+        'p.block2': 'blockquote',
+        'p.block3': 'blockquote',
+        'p.blockquote': 'blockquote',
+        'p.center': 'center',
+        'p.center1': 'center',
+        'span.b': 'b',
+        'span.i': 'i',
+        'span.italic': 'i',
+        'span.small': 'small',
+        'span.small1': 'small',
+        'span.smallcaps': 'small',
+        'span.underline': 'u',
+    }
+    for (selector, new_name) in replace.items():
+        for tag in soup.select(selector):
+            if isinstance(tag['class'], str):
+                tag['class'] = tag['class'].strip().split()
+            if len(tag['class']) == 1:
+                tag.name = new_name
+                tag['class'] = []
 
 @soup_cleaner
-def strip_ptag_whitespace(soup):
-    ps = soup.find_all('p') + soup.find_all('blockquote')
+def strip_unecessary_whitespace(soup):
+    tags = ['p', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']
+    elements = [element for tag in tags for element in soup.find_all(tag)]
 
-    for p in ps:
-        descendants = list(p.descendants)
+    for element in elements:
+        descendants = list(element.descendants)
         while descendants and not isinstance(descendants[0], bs4.element.NavigableString):
             if descendants[0].name == 'br':
                 descendants[0].decompose()
