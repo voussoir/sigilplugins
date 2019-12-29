@@ -115,8 +115,13 @@ def collect_footnotes(soup):
 def inject_footnotes(soup):
     footnote_links = soup.find_all('span', {'class': 'gcufootnote_link'})
     for footnote_link in reversed(footnote_links):
+        if contains_class(footnote_link.parent, 'gcufootnote_content'):
+            # In the case of nested footnotes, let's place the parent first
+            # and come back for this child on the next go around.
+            continue
         if len(footnote_link.contents) != 1:
-            print(footnote_link, 'is malformed. Should just be >[id<.')
+            print(footnote_link, 'is malformed. Should just be >[id]<.')
+
         footnote_id = footnote_link.contents[0]
         if not footnote_id.startswith('['):
             print(footnote_link, 'is malformed. Should start with [id].')
