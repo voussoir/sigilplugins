@@ -123,15 +123,28 @@ def inject_footnotes(soup):
             print(footnote_link, 'is malformed. Should just be >[id]<.')
 
         footnote_id = footnote_link.contents[0]
+
         if not footnote_id.startswith('['):
             print(footnote_link, 'is malformed. Should start with [id].')
             continue
+
         footnote_id = footnote_id.split('[', 1)[-1].split(']', 1)[0]
 
         if footnote_id not in global_footnotes:
             continue
+
         footnote = global_footnotes[footnote_id]
-        footnote_link.parent.insert_after(footnote)
+
+
+        parent = footnote_link.parent
+        while parent and parent.name not in ['p', 'blockquote', 'div']:
+            parent = parent.parent
+
+        if parent is None:
+            print(footnote_link, 'doesn\'t have a <p> or <blockquote> ancestor.')
+            continue
+
+        parent.insert_after(footnote)
         footnote_link.insert_before(footnote_link.contents[0])
         footnote_link.decompose()
         remove_class(footnote, 'gcufootnote_content')
