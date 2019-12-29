@@ -235,6 +235,11 @@ def remove_unwanted_classes_ids(soup):
             else:
                 tag['class'] = list(tag['class'])
 
+            try:
+                tag['class'].remove('')
+            except ValueError:
+                pass
+
             # Intentional list() duplicate so we can remove from original.
             for cls in list(tag['class']):
                 if any(re.match(pattern, cls) for pattern in PATTERNS):
