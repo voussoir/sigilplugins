@@ -96,7 +96,7 @@ def remove_empty_elements(html):
     return html
 
 @soup_cleaner
-def inject_footnotes(soup):
+def collect_footnotes(soup):
     footnotes = soup.find_all('blockquote', {'class': 'gcufootnote_content'})
     for footnote in footnotes:
         try:
@@ -111,6 +111,8 @@ def inject_footnotes(soup):
 
         global_footnotes[footnote_id] = footnote
 
+@soup_cleaner
+def inject_footnotes(soup):
     footnote_links = soup.find_all('span', {'class': 'gcufootnote_link'})
     for footnote_link in reversed(footnote_links):
         if len(footnote_link.contents) != 1:
