@@ -164,7 +164,16 @@ def convert_textdivs_p(soup):
     divs = soup.find_all('div')
     for div in divs:
         children = list(div.children)
-        if len(children) == 1 and isinstance(children[0], (str, bs4.element.NavigableString)):
+        convertme = True
+        for child in children:
+            if isinstance(child, bs4.element.NavigableString):
+                pass
+            elif child.name in ['i', 'b', 'em', 'strong', 'a', 'span', 'small']:
+                pass
+            else:
+                convertme = False
+                break
+        if convertme:
             div.name = 'p'
 
 @soup_cleaner
