@@ -19,15 +19,20 @@ def raise_children_and_delete(element):
         element.insert_after(children.pop(-1))
     element.decompose()
 
-def remove_class(element, cls):
-    if not hasattr(element, 'class') or element['class'] is None:
-        return
+def contains_class(element, cls):
+    try:
+        element['class']
+    except (AttributeError, KeyError):
+        return False
     if isinstance(element['class'], str):
-        if element['class'] == cls:
-            del element['class']
-            return
-        else:
-            element['class'] = element['class'].split()
+        element['class'] = element['class'].split()
+
+    return cls in element['class']
+
+def remove_class(element, cls):
+    if not contains_class(element, cls):
+        return
+
     try:
         element['class'].remove(cls)
     except IndexError:
