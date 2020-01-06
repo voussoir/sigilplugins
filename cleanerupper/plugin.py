@@ -349,47 +349,57 @@ def replace_italic_bold_span(soup):
 
 @soup_cleaner
 def replace_classes_real_tags(soup):
-    replace = {
-        'div.block': 'blockquote',
-        'div.block1': 'blockquote',
-        'div.block2': 'blockquote',
-        'div.block3': 'blockquote',
-        'div.blockquote': 'blockquote',
-        'div.center': 'center',
-        'div.center1': 'center',
-        'div.ext': 'blockquote',
-        'div.extract': 'blockquote',
-        'div.p': 'p',
-        'div.pp': 'p',
-        'p.block': 'blockquote',
-        'p.block1': 'blockquote',
-        'p.block2': 'blockquote',
-        'p.block3': 'blockquote',
-        'p.blockquote': 'blockquote',
-        'p.center': 'center',
-        'p.center1': 'center',
-        'p.p': 'p',
-        'p.pp': 'p',
-        'span.b': 'b',
-        'span.i': 'i',
-        'span.italic': 'i',
-        'span.sc': 'small',
-        'span.small': 'small',
-        'span.small1': 'small',
-        'span.smallcaps': 'small',
-        'span.smallCaps': 'small',
-        'span.smallCaps1': 'small',
-        'span.strike': 'strike',
-        'span.under': 'u',
-        'span.underline': 'u',
+    CLASSTAGS = {
+    'div': {
+        r'block\d*': 'blockquote',
+        r'blockquote': 'blockquote',
+        r'center\d*': 'center',
+        r'ext': 'blockquote',
+        r'extract': 'blockquote',
+        r'p+': 'p',
+    },
+    'p': {
+        r'block\d*': 'blockquote',
+        r'blockquote': 'blockquote',
+        r'center\d*': 'center',
+        r'h2-?[abcde]': 'h2',
+        r'h2-\d+': 'h2',
+        r'p+': 'p',
+    },
+    'span': {
+        r'b(old)?': 'b',
+        r'i(talic)?': 'i',
+        r'sc': 'small',
+        r'small\d*': 'small',
+        r'small[Cc]aps\d*': 'small',
+        r'strike': 'strike',
+        r'under(line)?': 'u',
     }
-    for (selector, new_name) in replace.items():
-        for tag in soup.select(selector):
-            if isinstance(tag['class'], str):
-                tag['class'] = tag['class'].strip().split()
-            if len(tag['class']) == 1:
+    }
+
+    for tag in soup.descendants:
+        if not isinstance(tag, bs4.element.Tag):
+            continue
+
+        if tag.name not in CLASSTAGS:
+            continue
+
+        if not tag.get('class'):
+            continue
+
+        if isinstance(tag['class'], str):
+            tag['class'] = tag['class'].split()
+        else:
+            tag['class'] = list(tag['class'])
+
+        if len(tag['class']) != 1:
+            continue
+
+        for (selector, new_name) in CLASSTAGS[tag.name].items():
+            if re.match(selector, tag['class'][0]):
                 tag.name = new_name
-                tag['class'] = []
+                del tag['class']
+                break
 
 @soup_cleaner
 def strip_unecessary_whitespace(soup):
