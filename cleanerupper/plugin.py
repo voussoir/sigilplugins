@@ -212,6 +212,7 @@ def remove_unwanted_classes_ids(soup):
         r'large',
         r'mbp_?pagebreak',
         r'morespaceabove',
+        r'noindent\d*',
         r'nonindent\d*',
         r'p_?[ivx]+',
         r'p_?\d+',
@@ -223,10 +224,12 @@ def remove_unwanted_classes_ids(soup):
         r'pgepubid\d*',
         r'right',
         r'section',
+        r'space[Bb]reak',
         r'spaceabove',
         r'squeeze(\d+)?',
         r'stickupcaps',
         r'title',
+        r'xrefInternal',
     ]
     for tag in soup.descendants:
         if not isinstance(tag, bs4.element.Tag):
