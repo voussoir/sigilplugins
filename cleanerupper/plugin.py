@@ -65,6 +65,16 @@ def bring_punctuation_into_italics(html):
     return html
 
 @html_cleaner
+def remove_header_br(html):
+    html = re.sub(r'<h1>([^\n]+?)\s*<br/>\s*([^\n]+?)</h1>', r'<h1>\1 \2</h1>', html)
+    html = re.sub(r'<h2>([^\n]+?)\s*<br/>\s*([^\n]+?)</h2>', r'<h2>\1 \2</h2>', html)
+    html = re.sub(r'<h3>([^\n]+?)\s*<br/>\s*([^\n]+?)</h3>', r'<h3>\1 \2</h3>', html)
+    html = re.sub(r'<h4>([^\n]+?)\s*<br/>\s*([^\n]+?)</h4>', r'<h4>\1 \2</h4>', html)
+    html = re.sub(r'<h5>([^\n]+?)\s*<br/>\s*([^\n]+?)</h5>', r'<h5>\1 \2</h5>', html)
+    html = re.sub(r'<h6>([^\n]+?)\s*<br/>\s*([^\n]+?)</h6>', r'<h6>\1 \2</h6>', html)
+    return html
+
+@html_cleaner
 def remove_misc_strings(html):
     html = html.replace('epub:type="pagebreak"', '')
     html = re.sub(r'title="[ivx]+"', '', html)
