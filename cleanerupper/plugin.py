@@ -77,6 +77,8 @@ def remove_header_br(html):
 @html_cleaner
 def remove_misc_strings(html):
     html = html.replace('epub:type="pagebreak"', '')
+    html = html.replace('<!-- BodyStart-->', '')
+    html = html.replace('<!-- BodyEnd-->', '')
     html = re.sub(r'title="[ivx]+"', '', html)
     html = re.sub(r'title="\d+"', '', html)
     return html
