@@ -91,7 +91,7 @@ def remove_space_around_br(html):
 @html_cleaner
 def replace_smart_quotes(html):
     html = re.sub(r'”|“', '"', html)
-    html = re.sub(r'‘|’|ʹ', "'", html)
+    html = re.sub(r'‘|’|ʹ|`', "'", html)
     return html
 
 @html_cleaner
