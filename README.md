@@ -7,6 +7,8 @@ https://sigil-ebook.com/
 
 https://github.com/Sigil-Ebook/Sigil
 
+## Mirrors
+
 https://github.com/voussoir/sigilplugins
 
 https://gitlab.com/voussoir/sigilplugins
