@@ -94,7 +94,7 @@ def imagecrunch(book, options):
         data = io.BytesIO()
         # i = i.convert('L')
         new_dimension = fit_into_bounds(*i.size, options['max_dimension'], options['max_dimension'], only_shrink=True)
-        i = i.resize(new_dimension, resample=PIL.Image.ANTIALIAS)
+        i = i.resize(new_dimension, resample=PIL.Image.LANCZOS)
         i.save(data, format='jpeg', quality=options['quality'])
         data.seek(0)
         new_size = len(data.read())
