@@ -9,6 +9,8 @@ https://github.com/Sigil-Ebook/Sigil
 
 ## Mirrors
 
+https://git.voussoir.net/voussoir/sigilplugins
+
 https://github.com/voussoir/sigilplugins
 
 https://gitlab.com/voussoir/sigilplugins
